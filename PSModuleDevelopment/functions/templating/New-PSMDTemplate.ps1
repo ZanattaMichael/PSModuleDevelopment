@@ -175,11 +175,18 @@
 			
 			$processedReferencePath = Resolve-Path $ReferencePath
 			
+#
+# This process the PSMDTemplate file.
+#
+
 			if (Test-Path (Join-Path $processedReferencePath "PSMDTemplate.ps1"))
 			{
 				$templateData = & (Join-Path $processedReferencePath "PSMDTemplate.ps1")
 				foreach ($key in $templateData.Scripts.Keys)
 				{
+#
+# Need to investigate. This is creating the scripts.
+#
 					$template.Scripts[$key] = New-Object PSModuleDevelopment.Template.ParameterScript($key, $templateData.Scripts[$key])
 				}
 				if ($templateData.TemplateName -and (Test-PSFParameterBinding -ParameterName TemplateName -Not)) { $template.Name = $templateData.TemplateName }
@@ -318,11 +325,28 @@
 				Named script replacement pattern:
 				"$($Identifier)!([^{}!]+?)!$($Identifier)"
 			
-				Live script replacement pattern:
+				Inline script replacement pattern:
 				"$($Identifier){(.+?)}$($Identifier)"
+
+				File Interpolation script replacement patten:
+				"$($Identifier)\[\[([^{}!]+?)\]\]($Identifier)"
+				
+				File Interpolation inline replacement patten:
+				"$($Identifier)\[([^{}!]+?)\]($Identifier)"
 			
+				Choice replacement patten in-line:
+				"$($Identifier)\/([^{}!]+?)\/($Identifier)"
+				
+				Choice replacement patten in-line:
+				"$($Identifier)\/\/([^{}!]+?)\/\/($Identifier)"				
+
 				Chained together in a logical or, in order to avoid combination issues.
 			#>
+#
+#
+# We need to update the patten here
+#
+#
 			$pattern = "$($Identifier)([^{}!]+?)$($Identifier)|$($Identifier)!([^{}!]+?)!$($Identifier)|(?ms)$($Identifier){(.+?)}$($Identifier)"
 			#endregion Regex
 			

@@ -1,0 +1,36 @@
+Invoke-PSMDTemplate
+
+$Template
+
+pp - Standard
+p{}p - Inline ScriptBlock
+p{{}}p - ScriptBlock Script Replacement
+
+p[]p - File Interpolation Inline
+p[[]]p - File Interpolation script replacement
+
+p//p Choices Prompting Inline
+p////p Choices Prompting script replacement
+
+p/
+GroupName = ""
+ChoiceMessage = ""
+ChoiceExpectedResult = "","",""
+ChoiceDefault = ""
+ActionIfTrue = "STRING"
+/p
+
+
+
+
+
+
+
+Update C# Project to:
+
+1. Add ParameterFile.cs
+2. Add ParameterChoice.cs
+
+
+
+
