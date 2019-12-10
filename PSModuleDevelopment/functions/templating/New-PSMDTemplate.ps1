@@ -334,7 +334,7 @@
 				File Interpolation inline replacement patten:
 				"$($Identifier)\[([^{}!]+?)\]($Identifier)"
 			
-				Choice replacement patten in-line:
+				Choice replacement patten script:
 				"$($Identifier)\/([^{}!]+?)\/($Identifier)"
 				
 				Choice replacement patten in-line:
@@ -342,12 +342,8 @@
 
 				Chained together in a logical or, in order to avoid combination issues.
 			#>
-#
-#
-# We need to update the patten here
-#
-#
-			$pattern = "$($Identifier)([^{}!]+?)$($Identifier)|$($Identifier)!([^{}!]+?)!$($Identifier)|(?ms)$($Identifier){(.+?)}$($Identifier)"
+
+			$pattern = "$($Identifier)([^{}!]+?)$($Identifier)|$($Identifier)!([^{}!]+?)!$($Identifier)|(?ms)$($Identifier){(.+?)}$($Identifier)|$($Identifier)\[\[([^{}!]+?)\]\]($Identifier)|$($Identifier)\/\/([^{}!]+?)\/\/($Identifier)"
 			#endregion Regex
 			
 			$name = $Item.Name
@@ -521,6 +517,108 @@
 							}
 						}
 						#endregion Live Scriptblock replacement
+
+						#
+						# TODO: ADD FILE INTERPOLATION - DONE
+						# TODO: ADD TESTING 
+						#
+
+						#region Script File Interpolation
+						if (($find.Groups[4].Success) -or ($find.Groups[5].Success)) {
+													
+							# File Script Interpolation
+							if ($file.Groups[4].Success) {
+								$ScriptFileName = ($Template.Files.Values.Where({$FilePath -eq $_.FilePath}, 'First', 1)).Name
+								$FilePath = $find.Groups[4].Value
+							}
+
+							# Inline File Interpolation
+							if ($find.Groups[5].Success) {
+								$FilePath = $find.Groups[5].Value
+								# Generate a unique file name
+								Do {
+									$ScriptFileName = "dynamicfile_$(Get-Random -Minimum 100000 -Maximum 999999)"
+								}
+								until ($Template.Files.Keys -notcontains $ScriptFileName)
+							}
+
+							# Declare Pest Path Parameters
+							$testPathParams = @{
+								ErrorAction = "Stop"
+							}
+
+							# Check to see if the File path is Relative or Absolute
+							if ([System.IO.Path]::IsPathRooted($FilePath)) {
+								$testPathParams.Add("LiteralPath", $FilePath)
+							} else {
+								$testPathParams.Add("Path", $FilePath)
+							}
+
+							# Files must exist
+							if (-not(Test-Path -Path $FilePath)) {
+								Throw "[Convert-Item] FilePath: $FilePath dosen't exist. Please ensure that the filepath exists and is accessible."
+							}
+
+							# Update the Log
+							Write-PSFMessage -Level Debug -Message "Adding File Interpolation" -Tag 'File', 'Interpolation' -FunctionName Convert-Item
+
+							$parameter = [PSModuleDevelopment.Template.FileInterpolation]::New($ScriptFileName, $FilePath)
+							$Template.Files[$ScriptFileName] = $parameter
+
+						}
+						#endregion Script File Interpolation
+
+						#
+						# TODO: ADD CHOICE
+						#
+						#region Choice Interpolation
+						if (($find.Groups[6].Success) -or ($find.Groups[7].Success)) {
+
+							# Script Choice Prompt
+							if ($file.Groups[6].Success) {
+								$ChoiceName = # LATER
+								$ChoiceData = $find.Groups[6].Value
+							}
+
+							# In-Line Choice Prompt
+							if ($find.Groups[7].Success) {
+								$ChoiceData = $find.Groups[7].Value
+								# Generate a unique file name
+								Do {
+									$ChoiceName = "dynamicchoice_$(Get-Random -Minimum 100000 -Maximum 999999)"
+								}
+								until ($Template.Files.Keys -notcontains $ScriptFileName)
+							}							
+
+							# Convert From String Data
+							try {
+								$StringData = ConvertFrom-StringData $ChoiceData
+							} Catch {
+								# TODO: Update Error
+								Throw "Format is incorrect"
+							}
+
+							$TestObjectPropertyParams = @{
+								Object = $StringData
+								Property = 'GroupName', 'ChoiceMessage', 'ExpectedResult', 'ActionIfTrue', 'ProcessIfTrue'
+							}
+
+							# Validate that all Properties are Present and Accounted For
+							if (-not(Test-ObjectProperty @TestObjectPropertyParams)) {
+								# Throw to the User
+								# TODO: Add fail message, specifiy the location of the error.
+								Throw ""
+							}
+
+							#
+							# We need create the object and add it!
+							#
+
+
+						}
+						#endregion Choice Interpolation
+
+
 					}
 					$object.Value = $text
 				}
@@ -531,6 +629,7 @@
 					$object.PlainText = $false
 				}
 				#endregion File Content
+				
 			}
 			#endregion File
 			

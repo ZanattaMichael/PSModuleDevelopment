@@ -59,6 +59,18 @@ namespace PSModuleDevelopment.Template
         public Dictionary<string, ParameterScript> Scripts = new Dictionary<string, ParameterScript>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
+        /// List of Files that will be invoked on initialization
+        /// </summary>
+        // TODO: Please validate that Files has been added by me, since i was a banana and didn't commit my code.
+        public Dictionary<string, FileInterpolation> Files = new Dictionary<string, FileInterpolation>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// List of prompts that are required on initialization
+        /// </summary>
+        public Dictionary<string, ChoiceInterpolation> Choices = new Dictionary<string, ChoiceInterpolation>(StringComparer.OrdinalIgnoreCase);
+
+
+        /// <summary>
         /// Items in the root directory of the template (which may contain children themselves).
         /// </summary>
         public List<TemplateItemBase> Children = new List<TemplateItemBase>();

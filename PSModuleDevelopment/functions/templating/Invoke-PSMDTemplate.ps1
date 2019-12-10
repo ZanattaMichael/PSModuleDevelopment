@@ -324,7 +324,49 @@
 				#endregion Project
 			}
 		}
-		
+
+		function Read-Choice {
+			[CmdletBinding()]
+			param(
+				[Parameter(Mandatory)]
+				[String]
+				$Message,
+				[Parameter(Mandatory)]
+				[String[]]
+				$ExpectedResult,
+				[String]
+				$DefaultValue,
+				[Int]
+				$RetryCountLimit = 10
+			)
+
+			Write-PSFMessage -Level Verbose -Message "Processing choice from template $($Message)" -Tag 'Choice' -FunctionName Read-Choice
+
+			$RetryCount = 0
+
+			# Append the Default Value to the Message
+			if (-not([String]::IsNullOrEmpty($DefaultValue))) {
+				$Message = "{0} (Default: {1})" -f $Message, $DefaultValue
+			}
+
+			Do {			
+				# Prompt the user for Input
+				$Prompt = Read-Host -Prompt $Message
+				if ([string]::IsNullOrEmpty($Prompt)) {
+					$Prompt = $DefaultValue
+				}				
+				$RetryCount++
+			} Until (($Prompt -in $ExpectedResult) -or ($RetryCount -gt $RetryCountLimit))
+
+			# If the Retry Counter Exceeds the Limit. Throw a Terminating Error
+			if ($RetryCount -gt $RetryCountLimit) {
+				Throw "Read-Choice exceeded acceptable limit."
+			}
+
+			Write-Output $Prompt
+
+		}
+
 		function Write-TemplateItem
 		{
 			[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
