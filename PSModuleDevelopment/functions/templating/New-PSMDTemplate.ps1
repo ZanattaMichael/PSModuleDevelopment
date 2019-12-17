@@ -528,8 +528,9 @@
 													
 							# File Script Interpolation
 							if ($file.Groups[4].Success) {
-								$ScriptFileName = ($Template.Files.Values.Where({$FilePath -eq $_.FilePath}, 'First', 1)).Name
-								$FilePath = $find.Groups[4].Value
+								$FilePath = $find.Groups[4].Value	
+								#TODO: REVIST LOGIC							
+								$ScriptFileName = ($Template.Files.Values.Where({$FilePath -eq $_.FilePath}, 'First', 1)).Name								
 							}
 
 							# Inline File Interpolation
@@ -576,7 +577,8 @@
 
 							# Script Choice Prompt
 							if ($file.Groups[6].Success) {
-								$ChoiceName = # LATER
+								##TODO: REVIST LOGIC
+								$ChoiceName = ($Template.Files.Values.Where({$FilePath -eq $_.FilePath}, 'First', 1)).Name
 								$ChoiceData = $find.Groups[6].Value
 							}
 
@@ -595,30 +597,42 @@
 								$StringData = ConvertFrom-StringData $ChoiceData
 							} Catch {
 								# TODO: Update Error
-								Throw "Format is incorrect"
+								Throw "Error. Choice Data within template is not valid. Please ensure that it follows <Name>=<Value> format."
 							}
 
 							$TestObjectPropertyParams = @{
 								Object = $StringData
-								Property = 'GroupName', 'ChoiceMessage', 'ExpectedResult', 'ActionIfTrue', 'ProcessIfTrue'
+								Property = 'GroupName', 'ChoiceMessage', 'ExpectedResult', 'ActionIfTrue', 'ProcessIfTrue', 'HelpMessage'
 							}
 
 							# Validate that all Properties are Present and Accounted For
 							if (-not(Test-ObjectProperty @TestObjectPropertyParams)) {
 								# Throw to the User
 								# TODO: Add fail message, specifiy the location of the error.
-								Throw ""
+								Throw "Error. Choice Data Missing: ('GroupName', 'ChoiceMessage', 'ExpectedResult', 'ActionIfTrue', 'ProcessIfTrue', 'HelpMessage'). Please correct the error and try again."
 							}
 
-							#
-							# We need create the object and add it!
-							#
+							# Declare the Parameters
+							$parameter = [PSModuleDevelopment.Template.ChoiceInterpolation]::New(
+								$ChoiceName,
+								$StringData.GroupName,
+								$StringData.ChoiceMessage,
+								$StringData.ChoiceExpectedResult,
+								$StringData.ActionIfTrue,
+								$StringData.ProcessIfTrue
+							)
 
-
+							# Add Choice Help Message
+							if (-not([String]::IsNullOrEmpty($StringData.ChoiceHelpMessage))) {
+								$parameter.AddHelp($StringData.ChoiceHelpMessage)
+							}
+							# Add Choice Default Message
+							if (-not([String]::IsNullOrEmpty($StringData.ChoiceDefault))) {
+								$paramter.AddDefaultValue($StringData.ChoiceDefault)
+							}
+				
 						}
 						#endregion Choice Interpolation
-
-
 					}
 					$object.Value = $text
 				}

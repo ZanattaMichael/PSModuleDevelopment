@@ -27,7 +27,12 @@ namespace PSModuleDevelopment.Template
         /// <summary>
         /// Message to Prompt the user
         /// </summary>
-        public string ChoiceMessage;
+        public string Message;
+
+        /// <summary>
+        /// Help Message to Prompt the user when entered !?
+        /// </summary>
+        public string HelpMessage;
 
         /// <summary>
         /// Expected Result
@@ -60,19 +65,52 @@ namespace PSModuleDevelopment.Template
         public ChoiceInterpolation(
             string Name, 
             string GroupName, 
-            string ChoiceMessage, 
+            string Message, 
             List<string> ExpectedResult,
             string ActionIfTrue,
             string ProcessIfTrue
         ) {
             this.Name = Name;
             this.GroupName = GroupName;
-            this.ChoiceMessage = ChoiceMessage;
+            this.Message = Message;
             this.ExpectedResult = ExpectedResult;
             this.ActionIfTrue = ActionIfTrue;
             this.ProcessIfTrue = ProcessIfTrue;
         }
 
+        //
+        // Builder Methods
+        //
+
+        /// <summary>
+        /// Add Default Values to the object.
+        /// </summary>
+        public void AddDefaultValue(string s) {
+            this.DefaultValue = s;
+        }
+        /// <summary>
+        /// Add help statement to the object
+        /// </summary>
+        public void AddHelp(string s) {
+            this.HelpMessage = s;
+        }
+
+        //
+        // Helper Method
+        //
+
+        public [Dictionary] ConvertToDictonaryObject() {
+
+            Dictionary<String, String> parameters = new Dictionary<string, string>();
+            parameters.Add("GroupName", this.GroupName);
+            parameters.Add("ChoiceMessage", this.Message);
+            parameters.Add("ExpectedResult", this.ExpectedResult);
+            parameters.Add("ActionIfTrue", this.ActionIfTrue);
+            parameters.Add("ProcessIfTrue", this.ProcessIfTrue);
+            if (this.HelpMessage) { parameters.Add("HelpMessage", this.HelpMessage)}
+            
+
+        }
 
     }
 

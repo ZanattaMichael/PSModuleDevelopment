@@ -200,6 +200,7 @@
 			Write-PSFMessage -Level Verbose -Message "Processing template $($item)" -Tag 'template', 'invoke' -FunctionName Invoke-PSMDTemplate
 			
 			$templateData = Import-Clixml -Path $Template.Path -ErrorAction Stop
+
 			#region Process Parameters
 			foreach ($parameter in $templateData.Parameters)
 			{
@@ -239,6 +240,63 @@
 			}
 			#endregion Scripts
 			
+			#region Files
+			foreach ($FileParam in $templateData.Files) {
+
+				if (-not $FileParam) { continue }
+
+				# Declare the FileContent Parameters
+				$Params = @{
+				}
+
+				# Check to see if the File path is Relative or Absolute
+				if ([System.IO.Path]::IsPathRooted($FileParam.FilePath)) {
+					$Params.Add("LiteratalPath", $FileParam.FilePath)
+				} else {
+					$Params.Add("Path", $FileParam.FilePath)
+				}
+
+				# Test Path 
+				if (-not(Test-Path @Params -ErrorAction SilentlyContinue)) {
+					Write-PSFMessage -Level Warning -Message "Test-Path $($FileParam.FilePath) failed. File does not exist! Please specify a custom value or use CTRL+C to terminate creation" -ErrorRecord $_ -FunctionName "Invoke-PSMDTemplate" -ModuleName 'PSModuleDevelopment'
+					$scriptParameters[$FileParam.Name] = Read-Host -Prompt "Value for filepath $($FileParam.Name)"								
+				} else {
+					$scriptParameters[$FileParam.Name] = Get-Content @Params
+				}
+
+			}
+			#endregion Files
+
+			#region Choice
+			foreach ($Choice in $templateData.Choices) {
+
+				#
+				# TODO: Group Choices by GroupName (Select the First One)
+
+				# Perform lookup within $scriptParameters
+				# 	If Present, retrive response and set that.
+				# 	If not prompt the user.
+				# Store into memory
+
+				if (-not $Choice) { continue }
+
+				if (-not $Parameters.ContainsKey($parameter)) {
+					# Throw a Terminating Error, Since a Choice should expect a prompt
+				}
+
+				# Choice Parameters
+				$Params = @{}
+
+				# Build Parameters based in the input
+				$Choice | Get-Member -MemberType NoteProperty, Property | ForEach-Object {
+					$Params.Add($_.Name,$Choice."$($_)")
+				}
+				# Remove Name from the  
+
+				$scriptParameters[$Choice.Name] = Read-Choice
+		
+			}
+			#endregion Choice
 			switch ($templateData.Type.ToString())
 			{
 				#region File
@@ -335,6 +393,8 @@
 				[String[]]
 				$ExpectedResult,
 				[String]
+				$HelpMessage,
+				[String]
 				$DefaultValue,
 				[Int]
 				$RetryCountLimit = 10
@@ -348,14 +408,32 @@
 			if (-not([String]::IsNullOrEmpty($DefaultValue))) {
 				$Message = "{0} (Default: {1})" -f $Message, $DefaultValue
 			}
+			# Append the Default Value to the Message
+			if (-not([String]::IsNullOrEmpty($HelpMessage))) {
+				$Message = "{0} (!? for Help)" -f $Message
+			}			
 
 			Do {			
 				# Prompt the user for Input
 				$Prompt = Read-Host -Prompt $Message
-				if ([string]::IsNullOrEmpty($Prompt)) {
-					$Prompt = $DefaultValue
-				}				
-				$RetryCount++
+
+				switch ($Prompt) {
+					"!?" {
+						if (-not([String]::IsNullOrEmpty($HelpMessage))) {
+							Write-Host $HelpMessage
+							break;
+						}	
+					}					
+					"" {
+						$Prompt = $DefaultValue
+						break;
+					}
+					default {
+						$RetryCount++
+					}
+
+				}
+			
 			} Until (($Prompt -in $ExpectedResult) -or ($RetryCount -gt $RetryCountLimit))
 
 			# If the Retry Counter Exceeds the Limit. Throw a Terminating Error

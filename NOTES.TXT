@@ -14,9 +14,10 @@ p////p Choices Prompting script replacement
 
 p/
 GroupName = ""
-ChoiceMessage = ""
+ChoiceMessage = "[A] All [N] None"
 ChoiceExpectedResult = "","",""
 ChoiceDefault = ""
+ChoiceHelpMessage = ""
 ActionIfTrue = "STRING"
 /p
 
